@@ -1,4 +1,4 @@
-package com.markerapp;
+package com.alemenomarkerapp;
 
 import android.os.Build;
 import android.os.Bundle;

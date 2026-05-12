@@ -46,7 +46,10 @@ const HTML_CONTENT = `
             cv.approxPolyDP(contour, approx, 0.04 * peri, true);
 
             if (approx.rows === 4) {
-              if (area > maxArea) {
+              // Check hierarchy: Does this square have children?
+              // The hierarchy is [next, prev, child, parent]
+              const hasChild = hierarchy.data32S[i * 4 + 2] !== -1;
+              if (hasChild && area > maxArea) {
                 maxArea = area;
                 bestMarker = approx.clone();
               }
@@ -83,31 +86,54 @@ const HTML_CONTENT = `
           const M = cv.getPerspectiveTransform(sortedSrcPts, dstPts);
           const warped = new cv.Mat();
           cv.warpPerspective(mat, warped, M, dsize);
-
-          cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
-          cv.threshold(gray, thresh, 127, 255, cv.THRESH_BINARY);
-          
-          const tl = thresh.ucharPtr(50, 50)[0];
-          const tr = thresh.ucharPtr(50, 250)[0];
-          const bl = thresh.ucharPtr(250, 50)[0];
-          const br = thresh.ucharPtr(250, 250)[0];
-
+          // Final Structural Validation: Geometric Area Filtering
           let finalMat = new cv.Mat();
           let valid = false;
 
-          if (br > 127 && tl < 127 && tr < 127 && bl < 127) {
-            warped.copyTo(finalMat);
-            valid = true;
-          } else if (tr > 127 && tl < 127 && bl < 127 && br < 127) {
-            cv.rotate(warped, finalMat, cv.ROTATE_90_CLOCKWISE);
-            valid = true;
-          } else if (tl > 127 && tr < 127 && bl < 127 && br < 127) {
-            cv.rotate(warped, finalMat, cv.ROTATE_180);
-            valid = true;
-          } else if (bl > 127 && tl < 127 && tr < 127 && br < 127) {
-            cv.rotate(warped, finalMat, cv.ROTATE_90_COUNTERCLOCKWISE);
+          cv.cvtColor(warped, gray, cv.COLOR_RGBA2GRAY);
+          cv.threshold(gray, thresh, 127, 255, cv.THRESH_BINARY_INV);
+          
+          let rect_inner = new cv.Rect(40, 40, 220, 220);
+          let innerMat = thresh.roi(rect_inner);
+          let innerArea = 220 * 220;
+          
+          let innerContours = new cv.MatVector();
+          let innerHierarchy = new cv.Mat();
+          cv.findContours(innerMat, innerContours, innerHierarchy, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE);
+          
+          let dataBlobCount = 0;
+          for (let j = 0; j < innerContours.size(); j++) {
+            let cArea = cv.contourArea(innerContours.get(j));
+            // Only count shapes that are within 'Data Block' size range
+            if (cArea > innerArea * 0.005 && cArea < innerArea * 0.15) {
+              dataBlobCount++;
+            }
+          }
+          
+          // Valid markers have multiple data blocks OR high nesting
+          if (dataBlobCount >= 3 || (innerContours.size() >= 1 && dataBlobCount >= 1)) {
+            let moments = cv.moments(innerMat, false);
+            let cx = moments.m10 / moments.m00;
+            let cy = moments.m01 / moments.m00;
+            let dx = cx - 110;
+            let dy = cy - 110;
+
+            // Orientation logic
+            if (dx <= 0 && dy <= 0) {
+              warped.copyTo(finalMat);
+            } else if (dx > 0 && dy <= 0) {
+              cv.rotate(warped, finalMat, cv.ROTATE_90_COUNTERCLOCKWISE);
+            } else if (dx > 0 && dy > 0) {
+              cv.rotate(warped, finalMat, cv.ROTATE_180);
+            } else {
+              cv.rotate(warped, finalMat, cv.ROTATE_90_CLOCKWISE);
+            }
             valid = true;
           }
+
+          innerContours.delete();
+          innerHierarchy.delete();
+          innerMat.delete();
 
           if (valid) {
             const canvas = document.createElement('canvas');
