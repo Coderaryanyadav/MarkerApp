@@ -149,7 +149,6 @@ const HTML_CONTENT = `
           finalMat.delete();
           warped.delete();
           M.delete();
-          srcPts.delete();
           sortedSrcPts.delete();
           dstPts.delete();
           bestMarker.delete();
@@ -257,7 +256,7 @@ export default function App() {
         <View style={styles.uiOverlay}>
           <View style={styles.glassPanel}>
             <Text style={styles.statusText}>
-              {markers.length >= 20 ? "🎉 Completed 20 Markers!" : \`Processing... (\${markers.length}/20)\`}
+              {markers.length >= 20 ? "🎉 Completed 20 Markers!" : `Processing... (${markers.length}/20)`}
             </Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
               {markers.map((uri, idx) => (
