@@ -246,27 +246,52 @@ export default function App() {
         type={CameraType.back}
         ref={cameraRef}
       >
-        <View style={styles.topBar}>
-          <Text style={styles.headerText}>Scanner</Text>
-          <View style={[styles.statusBadge, cvReady ? styles.statusReady : styles.statusLoading]}>
-            <Text style={styles.statusBadgeText}>{cvReady ? "Ready" : "Loading OpenCV..."}</Text>
+        {/* Floating Header Pill */}
+        <View style={styles.headerWrapper}>
+          <View style={styles.floatingHeader}>
+            <View style={styles.headerLeft}>
+              <View style={styles.pulseDot} />
+              <Text style={styles.headerText}>MARKER_OS v2.4</Text>
+            </View>
+            <View style={[styles.statusBadge, cvReady ? styles.statusReady : styles.statusLoading]}>
+              <Text style={styles.statusBadgeText}>{cvReady ? "SYSTEM_ONLINE" : "BOOTING_CORES..."}</Text>
+            </View>
           </View>
         </View>
 
+        {/* Futuristic Scanning HUD */}
+        <View style={styles.hudOverlay}>
+          <View style={styles.reticleContainer}>
+            <View style={[styles.corner, styles.tl]} />
+            <View style={[styles.corner, styles.tr]} />
+            <View style={[styles.corner, styles.bl]} />
+            <View style={[styles.corner, styles.br]} />
+            <View style={styles.scanLine} />
+          </View>
+          <Text style={styles.hudHint}>ALIGN MARKER WITHIN FRAME</Text>
+        </View>
+
+        {/* Data Chip Tray */}
         <View style={styles.uiOverlay}>
           <View style={styles.glassPanel}>
-            <Text style={styles.statusText}>
-              {markers.length >= 20 ? "🎉 Completed 20 Markers!" : `Processing... (${markers.length}/20)`}
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView}>
+            <View style={styles.panelHeader}>
+              <Text style={styles.panelTitle}>DATA_EXTRACTS</Text>
+              <Text style={styles.counterText}>{markers.length}/20</Text>
+            </View>
+
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
               {markers.map((uri, idx) => (
-                <View key={idx} style={styles.imageContainer}>
+                <View key={idx} style={styles.dataChip}>
                   <Image source={{ uri }} style={styles.markerImage} />
+                  <View style={styles.chipFooter}>
+                    <Text style={styles.chipText}>#{idx + 1}</Text>
+                  </View>
                 </View>
               ))}
               {markers.length === 0 && (
                 <View style={styles.placeholderBox}>
-                  <Text style={styles.placeholderText}>No markers scanned yet.</Text>
+                  <ActivityIndicator color="rgba(0, 255, 255, 0.3)" />
+                  <Text style={styles.placeholderText}>AWAITING_INPUT...</Text>
                 </View>
               )}
             </ScrollView>
@@ -289,92 +314,185 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    justifyContent: 'center',
   },
   camera: {
     flex: 1,
+  },
+  headerWrapper: {
+    paddingTop: 60,
+    alignItems: 'center',
     width: '100%',
   },
-  topBar: {
-    paddingTop: 60,
-    paddingHorizontal: 24,
+  floatingHeader: {
+    backgroundColor: 'rgba(15, 15, 15, 0.85)',
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 30,
+    width: '90%',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#00ffff',
+    marginRight: 8,
+    shadowColor: '#00ffff',
+    shadowRadius: 10,
+    shadowOpacity: 0.8,
   },
   headerText: {
     color: '#fff',
-    fontSize: 24,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontSize: 14,
+    fontWeight: '900',
+    letterSpacing: 2,
+    fontFamily: 'System',
   },
   statusBadge: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   statusReady: {
-    backgroundColor: 'rgba(76, 175, 80, 0.8)',
+    backgroundColor: 'rgba(0, 255, 157, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 157, 0.5)',
   },
   statusLoading: {
-    backgroundColor: 'rgba(255, 152, 0, 0.8)',
+    backgroundColor: 'rgba(255, 171, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 171, 0, 0.5)',
   },
   statusBadgeText: {
     color: '#fff',
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  hudOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reticleContainer: {
+    width: 280,
+    height: 280,
+    position: 'relative',
+  },
+  corner: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderColor: '#00ffff',
+    borderWidth: 3,
+  },
+  tl: { top: 0, left: 0, borderRightWidth: 0, borderBottomWidth: 0 },
+  tr: { top: 0, right: 0, borderLeftWidth: 0, borderBottomWidth: 0 },
+  bl: { bottom: 0, left: 0, borderRightWidth: 0, borderTopWidth: 0 },
+  br: { bottom: 0, right: 0, borderLeftWidth: 0, borderTopWidth: 0 },
+  scanLine: {
+    position: 'absolute',
+    width: '100%',
+    height: 2,
+    backgroundColor: 'rgba(0, 255, 255, 0.5)',
+    top: '50%',
+    shadowColor: '#00ffff',
+    shadowRadius: 15,
+    shadowOpacity: 1,
+  },
+  hudHint: {
+    color: 'rgba(0, 255, 255, 0.6)',
+    marginTop: 20,
     fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 3,
   },
   uiOverlay: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 30,
     width: '100%',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
   },
   glassPanel: {
-    backgroundColor: 'rgba(20, 20, 20, 0.65)',
-    borderRadius: 24,
-    padding: 20,
+    backgroundColor: 'rgba(10, 10, 10, 0.8)',
+    borderRadius: 32,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(0, 255, 255, 0.1)',
+    overflow: 'hidden',
+  },
+  panelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  panelTitle: {
+    color: 'rgba(255,255,255,0.4)',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 4,
+  },
+  counterText: {
+    color: '#00ffff',
+    fontSize: 14,
+    fontWeight: '900',
+    fontFamily: 'System',
+  },
+  scrollContent: {
+    paddingRight: 20,
+  },
+  dataChip: {
+    marginRight: 16,
+    backgroundColor: 'rgba(255,255,255,0.03)',
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
-  },
-  statusText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  scrollView: {
-    width: '100%',
-  },
-  imageContainer: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    marginRight: 12,
+    width: 100,
   },
   markerImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.8)',
+    width: 100,
+    height: 100,
+  },
+  chipFooter: {
+    paddingVertical: 6,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 255, 255, 0.1)',
+  },
+  chipText: {
+    color: '#00ffff',
+    fontSize: 10,
+    fontWeight: '900',
   },
   placeholderBox: {
     width: width - 80,
-    height: 80,
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 20,
+    backgroundColor: 'rgba(0, 255, 255, 0.02)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
+    borderColor: 'rgba(0, 255, 255, 0.1)',
     borderStyle: 'dashed',
   },
   placeholderText: {
-    color: 'rgba(255,255,255,0.5)',
-    fontSize: 14,
-  }
+    color: 'rgba(0, 255, 255, 0.3)',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2,
+    marginTop: 10,
+  },
 });
